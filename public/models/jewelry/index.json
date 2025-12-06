@@ -1,0 +1,198 @@
+{
+    "rings": [
+        {
+            "id": "classic-engagement",
+            "name": "Classic Engagement Ring",
+            "file": "rings/classic-engagement.glb",
+            "price": 2500,
+            "materials": [
+                "gold",
+                "white-gold",
+                "rose-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond",
+                "sapphire",
+                "emerald",
+                "ruby"
+            ],
+            "description": "Timeless solitaire engagement ring with brilliant cut center stone"
+        },
+        {
+            "id": "eternity-band",
+            "name": "Eternity Band",
+            "file": "rings/eternity-band.glb",
+            "price": 1800,
+            "materials": [
+                "gold",
+                "white-gold",
+                "rose-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond",
+                "sapphire"
+            ],
+            "description": "Continuous circle of diamonds symbolizing eternal love"
+        },
+        {
+            "id": "cocktail-ring",
+            "name": "Cocktail Ring",
+            "file": "rings/cocktail-ring.glb",
+            "price": 3200,
+            "materials": [
+                "gold",
+                "rose-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond",
+                "emerald",
+                "ruby",
+                "sapphire"
+            ],
+            "description": "Bold statement piece perfect for special occasions"
+        }
+    ],
+    "pendants": [
+        {
+            "id": "heart-locket",
+            "name": "Heart Locket",
+            "file": "pendants/heart-locket.glb",
+            "price": 890,
+            "materials": [
+                "gold",
+                "white-gold",
+                "rose-gold"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Classic heart-shaped locket with engraving option"
+        },
+        {
+            "id": "cross-pendant",
+            "name": "Cross Pendant",
+            "file": "pendants/cross-pendant.glb",
+            "price": 650,
+            "materials": [
+                "gold",
+                "white-gold",
+                "silver"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Elegant cross pendant with subtle diamond accents"
+        },
+        {
+            "id": "circle-of-life",
+            "name": "Circle of Life",
+            "file": "pendants/circle-of-life.glb",
+            "price": 1200,
+            "materials": [
+                "white-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Modern circle pendant representing infinity and unity"
+        }
+    ],
+    "earrings": [
+        {
+            "id": "diamond-studs",
+            "name": "Diamond Studs",
+            "file": "earrings/diamond-studs.glb",
+            "price": 980,
+            "materials": [
+                "white-gold",
+                "platinum",
+                "silver"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Classic round brilliant cut diamond stud earrings"
+        },
+        {
+            "id": "hoop-earrings",
+            "name": "Hoop Earrings",
+            "file": "earrings/hoop-earrings.glb",
+            "price": 550,
+            "materials": [
+                "gold",
+                "white-gold",
+                "rose-gold",
+                "silver"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Modern hoop earrings with pave diamond detailing"
+        },
+        {
+            "id": "drop-earrings",
+            "name": "Drop Earrings",
+            "file": "earrings/drop-earrings.glb",
+            "price": 1450,
+            "materials": [
+                "white-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond",
+                "pearl"
+            ],
+            "description": "Elegant drop earrings with cascading design elements"
+        }
+    ],
+    "bracelets": [
+        {
+            "id": "tennis-bracelet",
+            "name": "Tennis Bracelet",
+            "file": "bracelets/tennis-bracelet.glb",
+            "price": 2100,
+            "materials": [
+                "white-gold",
+                "platinum"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Classic line bracelet with perfectly matched diamonds"
+        },
+        {
+            "id": "charm-bracelet",
+            "name": "Charm Bracelet",
+            "file": "bracelets/charm-bracelet.glb",
+            "price": 780,
+            "materials": [
+                "gold",
+                "rose-gold",
+                "silver"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Personalizable charm bracelet with customizable elements"
+        },
+        {
+            "id": "bangle-bracelet",
+            "name": "Bangle Bracelet",
+            "file": "bracelets/bangle-bracelet.glb",
+            "price": 890,
+            "materials": [
+                "gold",
+                "white-gold",
+                "rose-gold"
+            ],
+            "gems": [
+                "diamond"
+            ],
+            "description": "Sleek bangle with modern minimalist design"
+        }
+    ]
+}

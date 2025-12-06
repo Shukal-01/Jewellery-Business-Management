@@ -1,0 +1,371 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  customer
+  vendor
+  admin
+  monitoring
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  in_progress
+  quality_check
+  ready_to_ship
+  shipped
+  delivered
+  cancelled
+}
+
+enum DesignStatus {
+  draft
+  shared
+  ordered
+}
+
+enum Material {
+  gold_yellow
+  gold_white
+  gold_rose
+  platinum
+  silver
+  brass
+  copper
+  steel_stainless
+}
+
+enum Category {
+  ring
+  bracelet
+  pendant
+  necklace
+  earrings
+  brooch
+  cufflinks
+  custom
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  role        UserRole  @default(customer)
+  avatarUrl   String?   @map("avatar_url")
+  phone       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  vendor      Vendor?
+  orders      Order[]
+  designs     Design[]
+  reviews     Review[]
+  authSession AuthSession[]
+
+  @@map("users")
+}
+
+model Vendor {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  businessName  String   @map("business_name")
+  location      Json     // City, Country, Coordinates
+  specialties   String[] // Array of specialties
+  capacity      Int      @default(10) // Max concurrent orders
+  rating        Decimal  @default(0.00) @db.Decimal(3, 2)
+  isVerified    Boolean  @default(false) @map("is_verified")
+  description   String?
+  website       String?
+  payoutInfo    Json?    @map("payout_info") // Bank account, PayPal, etc.
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  earnings      Payout[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt
+
+  @@map("vendors")
+}
+
+model DesignTemplate {
+  id                  String     @id @default(cuid())
+  name                String
+  description         String?
+  category            Category
+  baseModelUrl        String     @map("base_model_url") // GLB/GLTF file
+  previewImageUrl     String?    @map("preview_image_url")
+  basePrice           Decimal    @map("base_price") @db.Decimal(10, 2)
+  availableMaterials  Material[] // Materials that can be used
+  sizeRange           Json?      // Size constraints and options
+  customizations      Json?      // Available customizations
+  complexity          Float      @default(1.0) // Manufacturing complexity factor
+  isActive            Boolean    @default(true) @map("is_active")
+
+  // Relations
+  designs             Design[]
+  orderItems          OrderItem[]
+
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt
+
+  @@map("design_templates")
+}
+
+model Design {
+  id               String       @id @default(cuid())
+  userId           String       @map("user_id")
+  templateId       String?      @map("template_id")
+  name             String
+  description      String?
+  customizations   Json         // All user customizations (material, size, gems, etc.)
+  modelUrl         String?      @map("model_url") // Generated 3D model
+  previewUrl       String?      @map("preview_url") // Rendered preview image
+  status           DesignStatus @default(draft)
+  isPublic         Boolean      @default(false) @map("is_public")
+  shareToken       String?      @unique // For sharing designs
+  version          Int          @default(1)
+
+  // Relations
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template         DesignTemplate? @relation(fields: [templateId], references: [id])
+  orderItems       OrderItem[]
+  validations      DesignValidation[]
+  aiSuggestions    AiSuggestion[]
+
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt
+
+  @@map("designs")
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  userId            String      @map("user_id")
+  vendorId          String?     @map("vendor_id")
+  orderNumber       String      @unique
+  totalAmount       Decimal     @map("total_amount") @db.Decimal(10, 2)
+  currency          String      @default("USD")
+  status            OrderStatus @default(pending)
+  priority          String      @default("normal") // normal, express, vip
+  shippingAddress   Json        @map("shipping_address") // Full address object
+  billingAddress    Json?       @map("billing_address")
+  estimatedDelivery DateTime?   @map("estimated_delivery")
+  actualDelivery    DateTime?   @map("actual_delivery")
+  trackingNumber    String?     @map("tracking_number")
+  notes             String?     // Customer order notes
+  internalNotes     String?     @map("internal_notes") // Vendor/admin notes
+
+  // Relations
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor            Vendor?     @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+  statusUpdates     OrderStatusUpdate[]
+  review            Review?
+
+  paymentStatus     String      @default("pending") // pending, paid, refunded
+  paymentMethod     String?
+  paymentIntent     String?     // Stripe payment intent ID
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String    @id @default(cuid())
+  orderId         String    @map("order_id")
+  designId        String    @map("design_id")
+  templateId      String    @map("template_id")
+  material        Material
+  size            String?
+  unitPrice       Decimal   @map("unit_price") @db.Decimal(10, 2)
+  quantity        Int       @default(1)
+  customizations  Json      // Specific customizations for this item
+
+  // Manufacturing details
+  productionTime  Float?    @map("production_time") // Hours
+  weight          Float?    // Estimated weight in grams
+  dimensions      Json?     // Physical dimensions
+
+  // Relations
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  design          Design    @relation(fields: [designId], references: [id], onDelete: Cascade)
+  template        DesignTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("order_items")
+}
+
+model OrderStatusUpdate {
+  id          String      @id @default(cuid())
+  orderId     String      @map("order_id")
+  status      OrderStatus
+  notes       String?
+  updatedBy   String?     @map("updated_by") // User ID who updated
+  isCustomer  Boolean     @default(false) @map("is_customer") // Whether to notify customer
+
+  // Relations
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@map("order_status_updates")
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  orderId     String    @unique @map("order_id")
+  rating      Int       // 1-5 stars
+  title       String?
+  content     String?
+  images      String[]  // URLs to review images
+  isVerified  Boolean   @default(false) @map("is_verified")
+  helpful     Int       @default(0) // Helpful votes
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt
+
+  @@map("reviews")
+}
+
+model DesignValidation {
+  id                String   @id @default(cuid())
+  designId          String   @map("design_id")
+  validationType    String   @map("validation_type") // manufacturability, structural, aesthetic
+  score             Int      // 0-100 quality score
+  issues            Json     // Array of issues found
+  suggestions       Json     // Array of improvement suggestions
+  processingTime    Int      @map("processing_time") // milliseconds
+  modelVersion      String   @map("model_version") // AI model version used
+
+  // Relations
+  design            Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("design_validations")
+}
+
+model AiSuggestion {
+  id            String   @id @default(cuid())
+  designId      String   @map("design_id")
+  type          String   // material, gemstone, engraving, style
+  recommendation String
+  confidence    Int      // 0-100 confidence score
+  reasoning     String   // Why this suggestion was made
+  priceImpact   Decimal  @map("price_impact") @db.Decimal(10, 2) // Additional cost impact
+  isAccepted    Boolean  @default(false) @map("is_accepted")
+
+  // Relations
+  design        Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("ai_suggestions")
+}
+
+model Payout {
+  id            String   @id @default(cuid())
+  vendorId      String   @map("vendor_id")
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  status        String   @default("pending") // pending, processing, completed, failed
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+  orderIds      String[] @map("order_ids") // Orders included in this payout
+  transactionId String?  @map("transaction_id") // Payment gateway transaction ID
+  notes         String?
+
+  // Relations
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  processedAt   DateTime? @map("processed_at")
+
+  @@map("payouts")
+}
+
+model AiModelMetrics {
+  id             String   @id @default(cuid())
+  modelName      String   @map("model_name")
+  modelVersion   String   @map("model_version")
+  timestamp      DateTime @default(now())
+  inferenceTime  Int      @map("inference_time_ms") // milliseconds
+  successRate    Decimal  @map("success_rate") @db.Decimal(5, 4)
+  errorCount     Int      @map("error_count")
+  requestCount   Int      @map("request_count")
+  gpuMemory      Int?     @map("gpu_memory_mb") // GPU memory usage in MB
+  cost           Decimal  @db.Decimal(10, 6) // Cost in USD
+
+  @@map("ai_model_metrics")
+}
+
+model SystemAlert {
+  id            String   @id @default(cuid())
+  type          String   // critical, warning, info
+  category      String   // system, performance, security, business
+  title         String
+  message       String
+  severity      Int      // 1-10, 10 being most severe
+  isResolved    Boolean  @default(false) @map("is_resolved")
+  resolvedBy    String?  @map("resolved_by") // User ID
+  resolvedAt    DateTime? @map("resolved_at")
+  autoRecovery  String?  @map("auto_recovery") // Suggested recovery action
+  metadata      Json?    // Additional context data
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("system_alerts")
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  sessionToken String   @unique @map("session_token")
+  expiresAt    DateTime @map("expires_at")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  lastActivity DateTime @default(now()) @map("last_activity")
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("auth_sessions")
+}
+
+model AppSettings {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         Json
+  category      String   // general, pricing, shipping, features
+  description   String?
+  isPublic      Boolean  @default(false) @map("is_public") // Whether this setting is accessible via public API
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt
+
+  @@map("app_settings")
+}
